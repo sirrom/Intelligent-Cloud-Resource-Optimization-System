@@ -1,0 +1,42 @@
+┌─────────────────────────────────────────────────────────────────────┐
+│                     CLOUD METRICS DATASET                           │
+│  CPU | Memory | Network | Power | Instructions | Execution Time     │
+│  Energy Efficiency | Task Type | Task Priority | Task Status        │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│               STAGE 1 — DATA PIPELINE          [Week 1–2]           │
+│   Ingestion → Cleaning → EDA → Feature Engineering → Splitting      │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+          ┌──────────────────┼──────────────────┐
+          ▼                  ▼                  ▼
+┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
+│  STAGE 2A        │ │  STAGE 2B        │ │  STAGE 2C        │
+│  REGRESSION      │ │  CLASSIFICATION  │ │  CLUSTERING      │
+│  [Weeks 2,5,7,8] │ │  [Weeks 3,4,6,7]│ │  [Week 9,10]     │
+│                  │ │                  │ │                  │
+│ Predict:         │ │ Classify:        │ │ Discover:        │
+│ • Execution Time │ │ • Task Status    │ │ • Workload       │
+│ • Energy Use     │ │ • Task Priority  │ │   Profiles       │
+│ • Power Consume  │ │ • Task Type      │ │ • Anomaly Groups │
+└────────┬─────────┘ └────────┬─────────┘ └────────┬─────────┘
+         └──────────────────── ┼ ──────────────────┘
+                               ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│               STAGE 3 — LEARNING THEORY ANALYSIS   [Week 11]        │
+│       Bias/Variance Audit | VC Analysis | Regularization Study      │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│               STAGE 4 — REINFORCEMENT LEARNING     [Week 12]        │
+│       RL Agent learns optimal resource allocation policy            │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│               STAGE 5 — FINAL DASHBOARD & REPORT   [Week 13]        │
+│       All results unified → Recommendations → Energy Savings        │
+└─────────────────────────────────────────────────────────────────────┘
