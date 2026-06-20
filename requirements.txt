@@ -1,0 +1,45 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Cloud Resource Optimisation — ML Capstone
+# requirements.txt
+#
+# Python 3.9 – 3.11 recommended
+# Install with:  pip install -r requirements.txt
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+# ── Core numerical & data handling ────────────────────────────────────────────
+numpy>=1.24.0,<2.0.0
+pandas>=2.0.0,<3.0.0
+scipy>=1.11.0
+
+# ── Machine learning ──────────────────────────────────────────────────────────
+scikit-learn>=1.3.0,<2.0.0
+
+# ── Deep learning (Reinforcement Learning — DQN) ──────────────────────────────
+# Choose ONE backend depending on your hardware:
+tensorflow>=2.13.0,<2.16.0            # CPU or NVIDIA GPU (CUDA 11.x / 12.x)
+# tensorflow-metal>=1.1.0             # Apple Silicon GPU (uncomment if macOS M1/M2/M3)
+# tensorflow-cpu>=2.13.0              # CPU-only, no GPU (smallest install)
+
+# ── Visualisation ─────────────────────────────────────────────────────────────
+matplotlib>=3.7.0,<4.0.0
+seaborn>=0.12.0,<1.0.0
+
+# ── Jupyter environment ───────────────────────────────────────────────────────
+jupyter>=1.0.0
+jupyterlab>=4.0.0
+notebook>=7.0.0
+ipywidgets>=8.0.0
+ipython>=8.14.0
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+tqdm>=4.66.0              # progress bars
+joblib>=1.3.0             # parallel computing (scikit-learn backend)
+python-dotenv>=1.0.0      # optional: load .env config files
+
+# ── Optional but recommended ──────────────────────────────────────────────────
+# xgboost>=2.0.0          # XGBoost models (uncomment if used in Stage 2)
+# lightgbm>=4.0.0         # LightGBM models (uncomment if used in Stage 2)
+# optuna>=3.3.0           # Bayesian hyperparameter search
+# shap>=0.43.0            # SHAP model explainability
+# plotly>=5.17.0          # interactive charts in JupyterLab
