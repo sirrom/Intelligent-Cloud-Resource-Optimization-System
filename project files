@@ -1,0 +1,59 @@
+cloud-ml-capstone/
+│
+├── 📂 data/
+│   ├── cloud_performance_raw.csv          ← Original Kaggle dataset
+│   ├── cloud_performance_clean.csv        ← After Stage 1
+│   └── cloud_performance_features.csv     ← After feature engineering
+│
+├── 📂 stage1_data_pipeline/
+│   ├── ingest_and_clean.py
+│   ├── eda_analysis.py
+│   └── feature_engineering.py
+│
+├── 📂 stage2a_regression/
+│   ├── linear_regression.py
+│   ├── polynomial_regression.py
+│   ├── ridge_lasso.py
+│   ├── knn_regression.py
+│   ├── neural_net_regression.py
+│   └── svm_regression.py
+│
+├── 📂 stage2b_classification/
+│   ├── logistic_regression.py
+│   ├── naive_bayes.py
+│   ├── decision_tree.py
+│   ├── random_forest.py
+│   ├── svm_classifier.py
+│   ├── neural_net_classifier.py
+│   └── generative_discriminative_compare.py
+│
+├── 📂 stage2c_unsupervised/
+│   ├── kmeans_clustering.py
+│   ├── gmm_em.py
+│   ├── hierarchical_clustering.py
+│   ├── dbscan.py
+│   ├── pca_reduction.py
+│   ├── tsne_umap_viz.py
+│   └── kernel_pca.py
+│
+├── 📂 stage3_learning_theory/
+│   ├── bias_variance_analysis.py
+│   ├── vc_dimension_study.py
+│   └── regularization_paths.py
+│
+├── 📂 stage4_reinforcement_learning/
+│   ├── cloud_env.py                       ← Custom Gymnasium environment
+│   ├── q_learning_agent.py
+│   └── dqn_agent.py
+│
+├── 📂 stage5_dashboard/
+│   ├── results_aggregator.py
+│   └── final_dashboard.py
+│
+├── 📂 evaluation/
+│   ├── metrics_report.py
+│   └── model_comparison.py
+│
+├── capstone_notebook.ipynb                ← Master notebook (all stages)
+├── requirements.txt
+└── README.md
