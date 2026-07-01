@@ -1,0 +1,350 @@
+"""
+STUDENT LAB: Complete Data Preprocessing Pipeline (CSV)
+
+Data source path (as given):
+CSV_PATH = 'PATH'
+
+What this lab does (and prints):
+1) Load data
+2) Inspect structure (shape, columns, dtypes)
+3) Handle missing values
+4) Remove duplicates
+5) Convert/parse datetime if present
+6) Fix data types where possible
+7) Outlier handling (IQR clipping for numeric columns)
+8) Encode categorical features (One-Hot Encoding)
+9) Scale numeric features (Standard Scaling)
+10) (Optional) Train/test split if you specify a target column
+11) Save cleaned dataset + save processed features
+
+NOTE:
+- If you are running this in Google Colab, '/content/...' is correct.
+- If you are running locally, change CSV_PATH to your local file location.
+"""
+
+import pandas as pd
+import numpy as np
+
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.model_selection import train_test_split
+
+
+# =============================
+# 0) CONFIGURATION
+# =============================
+print("\n[0] CONFIGURATION...")
+
+CSV_PATH = "/content/vmCloud_data.csv"  # <-- your given path
+
+# If your dataset has a target column for supervised learning, set it here.
+# Example: TARGET_COL = "energy_efficiency"
+TARGET_COL = None   # keep None if you are only preprocessing, not training a model
+
+# Some columns are identifiers and usually should not be used as model features
+ID_COLS = ["vm_id"]  # adjust if needed
+
+print(f"CSV_PATH   : {CSV_PATH}")
+print(f"TARGET_COL : {TARGET_COL}")
+print(f"ID_COLS    : {ID_COLS}")
+
+
+# =============================
+# 1) LOAD DATA
+# =============================
+print("\n[1] LOADING DATA...")
+
+df = pd.read_csv(CSV_PATH)
+
+print("Loaded dataset successfully.")
+print("Shape (rows, cols):", df.shape)
+print("First 5 rows:\n", df.head())
+
+
+# =============================
+# 2) BASIC INSPECTION
+# =============================
+print("\n[2] BASIC INSPECTION...")
+
+print("\nColumn names:")
+print(df.columns.tolist())
+
+print("\nData types:")
+print(df.dtypes)
+
+print("\nMissing values per column:")
+print(df.isna().sum())
+
+print("\nSummary statistics (numeric columns):")
+print(df.describe(include=[np.number]))
+
+
+# =============================
+# 3) REMOVE DUPLICATES
+# =============================
+print("\n[3] REMOVING DUPLICATES...")
+
+before_rows = len(df)
+df = df.drop_duplicates()
+after_rows = len(df)
+
+print(f"Duplicates removed: {before_rows - after_rows}")
+print("New shape:", df.shape)
+
+
+# =============================
+# 4) DATETIME PARSING (if a timestamp-like column exists)
+# =============================
+print("\n[4] PARSING DATETIME (IF AVAILABLE)...")
+
+# Common timestamp column names to check (you can add more)
+possible_time_cols = ["timestamp", "time", "date", "datetime"]
+
+time_col_found = None
+for c in possible_time_cols:
+    if c in df.columns:
+        time_col_found = c
+        break
+
+if time_col_found:
+    print(f"Found datetime-like column: '{time_col_found}' -> converting to datetime...")
+    df[time_col_found] = pd.to_datetime(df[time_col_found], errors="coerce")
+
+    # Create useful time-based features
+    df["hour"] = df[time_col_found].dt.hour
+    df["dayofweek"] = df[time_col_found].dt.dayofweek
+
+    print("Created two new features: 'hour' and 'dayofweek'.")
+    print("Invalid datetime values (if any) became NaT (missing).")
+else:
+    print("No datetime-like column found. Skipping datetime parsing and time feature creation.")
+
+
+# =============================
+# 5) HANDLE MISSING VALUES
+# =============================
+print("\n[5] HANDLING MISSING VALUES...")
+
+numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
+categorical_cols = df.select_dtypes(include=["object"]).columns.tolist()
+
+print("Numeric columns detected   :", numeric_cols)
+print("Categorical columns detected:", categorical_cols)
+
+# Numeric: fill missing with median (robust to outliers)
+for col in numeric_cols:
+    missing_before = df[col].isna().sum()
+    if missing_before > 0:
+        med = df[col].median()
+        df[col] = df[col].fillna(med)
+        print(f"Filled missing numeric '{col}' with median={med:.4f} (filled {missing_before} values).")
+
+# Categorical: fill missing with mode (most frequent)
+for col in categorical_cols:
+    if col in ID_COLS:
+        # Usually do not fill IDs; but if missing exists, you can fill with placeholder
+        missing_before = df[col].isna().sum()
+        if missing_before > 0:
+            df[col] = df[col].fillna("unknown_id")
+            print(f"Filled missing ID-like '{col}' with 'unknown_id' (filled {missing_before} values).")
+        continue
+
+    missing_before = df[col].isna().sum()
+    if missing_before > 0:
+        mode_val = df[col].mode(dropna=True)
+        mode_val = mode_val.iloc[0] if len(mode_val) > 0 else "unknown"
+        df[col] = df[col].fillna(mode_val)
+        print(f"Filled missing categorical '{col}' with mode='{mode_val}' (filled {missing_before} values).")
+
+print("Missing value handling done.")
+
+
+# =============================
+# 6) OUTLIER HANDLING (IQR CLIPPING)
+# =============================
+print("\n[6] OUTLIER HANDLING (IQR CLIPPING ON NUMERIC COLUMNS)...")
+
+# IQR clipping is a simple method for labs: it limits extreme values
+# so they do not heavily affect scaling/model learning.
+for col in numeric_cols:
+    q1 = df[col].quantile(0.25)
+    q3 = df[col].quantile(0.75)
+    iqr = q3 - q1
+
+    # If IQR is 0 (all values equal), clipping doesn't help; skip safely.
+    if iqr == 0 or pd.isna(iqr):
+        continue
+
+    lower = q1 - 1.5 * iqr
+    upper = q3 + 1.5 * iqr
+
+    outliers_before = ((df[col] < lower) | (df[col] > upper)).sum()
+    if outliers_before > 0:
+        df[col] = df[col].clip(lower, upper)
+        outliers_after = ((df[col] < lower) | (df[col] > upper)).sum()
+        print(f"'{col}': clipped {outliers_before} outliers to range [{lower:.2f}, {upper:.2f}] "
+              f"(outliers after={outliers_after})")
+
+print("Outlier handling done.")
+
+
+# =============================
+# 7) FEATURE SELECTION (DROP IDS + RAW DATETIME)
+# =============================
+print("\n[7] FEATURE SELECTION (DROPPING IDENTIFIERS + RAW DATETIME)...")
+
+X_df = df.copy()
+
+# Drop ID columns if they exist
+drop_cols = [c for c in ID_COLS if c in X_df.columns]
+
+# Drop the raw datetime column if found (keep engineered features like hour/dayofweek)
+if time_col_found and time_col_found in X_df.columns:
+    drop_cols.append(time_col_found)
+
+if drop_cols:
+    X_df = X_df.drop(columns=drop_cols)
+    print("Dropped columns:", drop_cols)
+else:
+    print("No ID/datetime columns to drop.")
+
+print("Feature dataframe shape:", X_df.shape)
+
+
+# =============================
+# 8) OPTIONAL: SEPARATE TARGET
+# =============================
+print("\n[8] OPTIONAL TARGET SEPARATION...")
+
+y = None
+if TARGET_COL is not None and TARGET_COL in df.columns:
+    y = df[TARGET_COL].copy()
+    # Remove target from features if it is present there
+    if TARGET_COL in X_df.columns:
+        X_df = X_df.drop(columns=[TARGET_COL])
+    print(f"Target '{TARGET_COL}' separated.")
+else:
+    print("No target column selected (or target not found). Proceeding with preprocessing only.")
+
+
+# =============================
+# 9) ONE-HOT ENCODE CATEGORICAL FEATURES
+# =============================
+print("\n[9] ONE-HOT ENCODING CATEGORICAL FEATURES...")
+
+cat_cols = X_df.select_dtypes(include=["object"]).columns.tolist()
+num_cols = X_df.select_dtypes(include=["number"]).columns.tolist()
+
+print("Categorical features to encode:", cat_cols)
+print("Numeric features:", num_cols)
+
+ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
+
+if len(cat_cols) > 0:
+    encoded = ohe.fit_transform(X_df[cat_cols])
+    encoded_df = pd.DataFrame(encoded, columns=ohe.get_feature_names_out(cat_cols))
+else:
+    encoded_df = pd.DataFrame(index=X_df.index)
+
+numeric_df = X_df[num_cols].reset_index(drop=True)
+encoded_df = encoded_df.reset_index(drop=True)
+
+X_processed = pd.concat([numeric_df, encoded_df], axis=1)
+
+print("Encoding complete.")
+print("Processed feature shape:", X_processed.shape)
+
+
+# =============================
+# 10) SCALE NUMERIC FEATURES
+# =============================
+print("\n[10] SCALING NUMERIC FEATURES (STANDARD SCALER)...")
+
+scaler = StandardScaler()
+
+if len(num_cols) > 0:
+    X_processed[num_cols] = scaler.fit_transform(X_processed[num_cols])
+    print("Numeric scaling complete (mean ~0, std ~1).")
+else:
+    print("No numeric features found to scale.")
+
+
+# =============================
+# 11) OPTIONAL TRAIN/TEST SPLIT
+# =============================
+print("\n[11] OPTIONAL TRAIN/TEST SPLIT...")
+
+if y is not None:
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_processed, y, test_size=0.2, random_state=42
+    )
+    print("Split complete.")
+    print("X_train:", X_train.shape, "y_train:", y_train.shape)
+    print("X_test :", X_test.shape,  "y_test :", y_test.shape)
+else:
+    print("No target provided -> skipping train/test split.")
+
+
+# =============================
+# 12) SAVE OUTPUT FILES
+# =============================
+print("\n[12] SAVING OUTPUT FILES...")
+
+# Save cleaned raw dataframe (after missing/outlier handling, type fixes, etc.)
+df.to_csv("cleaned_vmcloud_data.csv", index=False)
+print("Saved: cleaned_vmcloud_data.csv")
+
+# Save model-ready processed features
+X_processed.to_csv("processed_features_vmcloud.csv", index=False)
+print("Saved: processed_features_vmcloud.csv")
+
+print("\nAll preprocessing steps completed successfully!")
+
+
+# =============================
+# 13) FINAL EXPLANATION (PRINTED)
+# =============================
+print("\n" + "=" * 70)
+print("FINAL EXPLANATION OF ACTIVITIES DONE")
+print("=" * 70)
+
+print("""
+1) Loaded the CSV file:
+   - Read the dataset into a pandas DataFrame for easy processing.
+
+2) Inspected the dataset:
+   - Printed shape, columns, data types, missing values, and numeric summary.
+   - This helps you understand problems before cleaning.
+
+3) Removed duplicates:
+   - Duplicate rows can distort analysis and ML training, so we dropped them.
+
+4) Parsed datetime (if a time column exists):
+   - Converted timestamp/date column into a datetime type.
+   - Created 'hour' and 'dayofweek' features to capture time patterns.
+
+5) Handled missing values:
+   - Numeric columns: filled missing values with the median (robust against outliers).
+   - Categorical columns: filled missing values with the mode (most frequent value).
+
+6) Handled outliers (IQR clipping):
+   - Calculated IQR for each numeric column and clipped extreme values
+     to reduce the effect of outliers.
+
+7) Feature selection:
+   - Dropped ID columns (like vm_id) because they usually don't help models learn patterns.
+   - Dropped raw datetime column (kept engineered time features instead).
+
+8) One-hot encoding:
+   - Converted categorical text columns into numeric indicator columns.
+
+9) Scaling numeric features:
+   - StandardScaler makes numeric features comparable in scale
+     (important for many ML algorithms).
+
+10) Train/test split (optional):
+   - If you set TARGET_COL, the code splits data into training and test sets.
+
+11) Saved outputs:
+   - 'cleaned_vmcloud_data.csv'  = cleaned dataset (human-readable)
+   - 'processed_features_vmcloud.csv' = model-ready feature matrix
+""")
